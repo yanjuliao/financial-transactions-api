@@ -72,7 +72,7 @@ src/
 ### 1. Clonar o repositório
 
 ```bash
-git clone https://github.com/seu-usuario/financial-transactions-api.git
+git clone https://github.com/yanjuliao/financial-transactions-api.git
 cd financial-transactions-api
 ```
 
