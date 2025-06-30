@@ -6,7 +6,7 @@ import { PrismaModule } from 'prisma/prisma.module';
 import { CategoryModule } from 'src/category/category.module';
 
 @Module({
-  imports: [PrismaModule, CategoryModule], // <- IMPORTANTE!
+  imports: [PrismaModule, CategoryModule],
   controllers: [TransactionController],
   providers: [TransactionService, TransactionRepository],
 })

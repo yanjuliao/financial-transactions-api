@@ -1,12 +1,20 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { CategoryService } from '../service/category.service';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateCategoryRequestDto } from '../dto/requests/create-category.request.dto';
 import { CreateManyCategoryRequestDto } from '../dto/requests/create-many-category.request.dto';
 import { CategoryResponseDto } from '../dto/responses/category.response.dto';
 import { MessageResponseDto } from '../dto/responses/message.response.dto';
 
 @ApiTags('Categories')
+@ApiBearerAuth('jwt-auth') 
 @Controller('categories')
 export class CategoryController {
   constructor(private readonly service: CategoryService) {}
@@ -30,7 +38,7 @@ export class CategoryController {
     type: CategoryResponseDto,
   })
   getById(@Param('id') categoryId: number): Promise<CategoryResponseDto> {
-    return this.service.getCategoryById(categoryId);
+    return this.service.getCategoryById(Number(categoryId));
   }
 
   @Post()

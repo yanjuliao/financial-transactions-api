@@ -1,0 +1,60 @@
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  ParseIntPipe,
+  Put,
+  Delete,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { CreateUserDto } from './dto/requests/create-user.dto';
+import { UpdateUserDto } from './dto/requests/update-user.dto';
+import { UsersService } from './users.service';
+import { UserResponseDto } from './dto/responses/user.response.dto';
+
+@ApiTags('Users')
+@ApiBearerAuth('jwt-auth') 
+@Controller('users')
+export class UsersController {
+  constructor(private readonly service: UsersService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Criar novo usuário' })
+  @ApiResponse({ status: 201, type: UserResponseDto })
+  create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
+    return this.service.create(dto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Listar todos os usuários' })
+  @ApiResponse({ status: 200, type: [UserResponseDto] })
+  findAll(): Promise<UserResponseDto[]> {
+    return this.service.findAll();
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Buscar usuário por ID' })
+  @ApiResponse({ status: 200, type: UserResponseDto })
+  findById(@Param('id', ParseIntPipe) id: number): Promise<UserResponseDto> {
+    return this.service.findById(id);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Atualizar usuário por ID' })
+  @ApiResponse({ status: 200, type: UserResponseDto })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    return this.service.update(id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Remover usuário por ID' })
+  @ApiResponse({ status: 204, description: 'Usuário removido com sucesso' })
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.service.delete(id);
+  }
+}

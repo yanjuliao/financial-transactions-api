@@ -9,16 +9,16 @@ import {
   Delete,
 } from '@nestjs/common';
 import { TransactionService } from '../service/transaction.service';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FilterByPeriodRequestDto } from '../dto/requests/filter-by-period.request.dto';
 import { CreateManyTransactionRequestDto } from '../dto/requests/create-many-transactions.request.dto';
 import { CreateTransactionRequestDto } from '../dto/requests/create-transaction.request.dto';
 import { UpdateTransactionRequestDto } from '../dto/requests/update-transaction.request.dto';
 import { TransactionResponseDto } from '../dto/response/transaction.response.dto';
 import { BalanceResponseDto } from '../dto/response/balance.response.dto';
-import { MessageResponseDto } from '../dto/response/message.response.dto';
 
 @ApiTags('Transactions')
+@ApiBearerAuth('jwt-auth') 
 @Controller('transactions')
 export class TransactionController {
   constructor(private readonly service: TransactionService) {}
