@@ -1,4 +1,3 @@
-
 <p align="center">
   <a href="http://nestjs.com/" target="blank">
     <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" />
@@ -41,6 +40,8 @@ API RESTful desenvolvida com **NestJS**, **Prisma** e **MySQL** para controle de
 - **Docker** – Containerização da aplicação e banco.
 - **Swagger (OpenAPI)** – Documentação interativa.
 - **Class-validator** – Validação de DTOs.
+- **Redis** – Armazenamento e validação de sessões JWT.
+- **Passport + JWT** – Autenticação via token.
 - **Jest** – Testes unitários e E2E.
 
 ---
@@ -49,6 +50,11 @@ API RESTful desenvolvida com **NestJS**, **Prisma** e **MySQL** para controle de
 
 ```
 src/
+├── auth/
+│   ├── jwt.strategy.ts
+│   ├── jwt-redis-auth.guard.ts
+│   ├── auth.service.ts
+│   └── decorators/
 ├── category/
 │   ├── controller/
 │   ├── service/
@@ -59,6 +65,8 @@ src/
 │   ├── service/
 │   ├── repository/
 │   └── dto/
+├── redis/
+│   └── redis.service.ts
 ├── common/
 │   ├── mapper/
 │   └── prisma/
@@ -130,8 +138,18 @@ npm run test:cov
 
 ---
 
+## 🔐 Autenticação
+
+- Utiliza JWT com armazenamento em Redis para sessões válidas.
+- Apenas usuários com token válido no Redis conseguem acessar as rotas protegidas.
+- Utilize o botão Authorize no Swagger para fornecer o token JWT (sem prefixo Bearer ).
+
+---
+
 ## 📌 Funcionalidades
 
+- ✅ Login e autenticação com JWT + Redis
+- ✅ Proteção automática de rotas com Guard global
 - ✅ Criar, atualizar e excluir transações
 - ✅ Consultar transações por ID ou todas
 - ✅ Registrar categorias personalizadas
