@@ -10,7 +10,7 @@ export class UserMapper {
       userId: user.userId,
       name: user.name,
       email: user.email,
-      senha: user.senha,
+      password: user.password,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
@@ -24,7 +24,7 @@ export class UserMapper {
     return {
       name: dto.name,
       email: dto.email,
-      senha: dto.senha,
+      password: dto.password,
     };
   }
 
@@ -32,7 +32,7 @@ export class UserMapper {
     return {
       name: dto.name ?? existing.name,
       email: dto.email ?? existing.email,
-      senha: dto.senha ?? existing.senha,
+      password: dto.password ?? existing.password,
     };
   }
 }

@@ -12,6 +12,9 @@ import { CategoryService } from 'src/category/service/category.service';
 
 @Injectable()
 export class TransactionService {
+  private TRANSACTION_NOT_FOUND_MESSAGE = 'Transaction not found';
+  private CATEGORY_NOT_FOUND_MESSAGE = 'Category not found';
+  private TRANSACTION_CREATED_MESSAGE = 'Transaction created successfully';
   constructor(
     private readonly repository: TransactionRepository,
     private readonly categoryService: CategoryService,
@@ -76,7 +79,7 @@ export class TransactionService {
   ): Promise<TransactionResponseDto> {
     const category = await this.categoryService.getCategoryById(dto.categoryId);
     if (!category) {
-      throw new NotFoundException(`Categoria ${dto.categoryId} não encontrada`);
+      throw new NotFoundException(this.CATEGORY_NOT_FOUND_MESSAGE);
     }
 
     const data = TransactionMapper.toEntity(dto);
@@ -89,7 +92,7 @@ export class TransactionService {
   ): Promise<MessageResponseDto> {
     const entities = dtos.map(TransactionMapper.toEntity);
     await this.repository.createTransactionsMany(entities);
-    return { message: 'Transações criadas com sucesso' };
+    return { message: this.TRANSACTION_CREATED_MESSAGE };
   }
 
   async updateTransaction(
@@ -106,7 +109,7 @@ export class TransactionService {
   async deleteTransaction(transactionId: number): Promise<void> {
     const found = await this.repository.findTransactionById(transactionId);
     if (!found) {
-      throw new NotFoundException(`Transação ${transactionId} não encontrada.`);
+      throw new NotFoundException(this.TRANSACTION_NOT_FOUND_MESSAGE);
     }
 
     await this.repository.deleteTransaction(transactionId);

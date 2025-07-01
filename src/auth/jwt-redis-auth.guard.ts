@@ -5,14 +5,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { RedisService } from '../redis/redis.service';
 import { IS_PUBLIC_KEY } from './decorators/public.decorator';
+import { AuthService } from './service/auth.service';
 
 @Injectable()
 export class JwtRedisAuthGuard extends AuthGuard('jwt') {
   constructor(
     private reflector: Reflector,
-    private readonly redisService: RedisService,
+    private readonly authService: AuthService,
   ) {
     super();
   }
@@ -28,12 +28,8 @@ export class JwtRedisAuthGuard extends AuthGuard('jwt') {
 
     const request = context.switchToHttp().getRequest();
     const token = request.headers.authorization?.replace('Bearer ', '');
-    const userId = request.user?.sub;
 
-    const storedToken = await this.redisService.get(`jwt:${userId}`);
-    if (!storedToken || storedToken !== token) {
-      throw new UnauthorizedException('Token expirado ou inválido no Redis');
-    }
+    this.authService.validateToken(token);
 
     return activated;
   }

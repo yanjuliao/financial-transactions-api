@@ -6,8 +6,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
-    .setTitle('API Financeira')
-    .setDescription('Documentação da API com JWT')
+    .setTitle('Financial API')
+    .setDescription('API documentation with JWT authentication')
     .setVersion('1.0')
     .addBearerAuth(
       {
