@@ -16,7 +16,7 @@ export class TransactionResponseDto {
 
   @ApiProperty({
     type: () => CategoryResponseDto,
-    description: 'Categoria associada à transação',
+    description: 'Category associated with the transaction',
   })
   category: CategoryResponseDto;
 }

@@ -14,16 +14,16 @@ import { CategoryResponseDto } from '../dto/responses/category.response.dto';
 import { MessageResponseDto } from '../dto/responses/message.response.dto';
 
 @ApiTags('Categories')
-@ApiBearerAuth('jwt-auth') 
+@ApiBearerAuth('jwt-auth')
 @Controller('categories')
 export class CategoryController {
   constructor(private readonly service: CategoryService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar todas as categorias' })
+  @ApiOperation({ summary: 'List all categories' })
   @ApiResponse({
     status: 200,
-    description: 'Lista de categorias',
+    description: 'List of categories',
     type: [CategoryResponseDto],
   })
   getAllCategories(): Promise<CategoryResponseDto[]> {
@@ -31,10 +31,10 @@ export class CategoryController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Buscar categoria por ID' })
+  @ApiOperation({ summary: 'Get category by ID' })
   @ApiResponse({
     status: 200,
-    description: 'Categoria encontrada',
+    description: 'Category found',
     type: CategoryResponseDto,
   })
   getById(@Param('id') categoryId: number): Promise<CategoryResponseDto> {
@@ -42,10 +42,10 @@ export class CategoryController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Criar uma nova categoria' })
+  @ApiOperation({ summary: 'Create a new category' })
   @ApiResponse({
     status: 201,
-    description: 'Categoria criada',
+    description: 'Category created successfully',
     type: CategoryResponseDto,
   })
   create(@Body() dto: CreateCategoryRequestDto): Promise<CategoryResponseDto> {
@@ -53,16 +53,16 @@ export class CategoryController {
   }
 
   @Post('many')
-  @ApiOperation({ summary: 'Criar várias categorias' })
+  @ApiOperation({ summary: 'Create multiple categories' })
   createMany(@Body() dto: CreateManyCategoryRequestDto) {
     return this.service.createManyCategories(dto.categories);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Deletar uma categoria' })
+  @ApiOperation({ summary: 'Delete a category' })
   @ApiResponse({
     status: 200,
-    description: 'Categoria deletada com sucesso',
+    description: 'Category deleted successfully',
     type: MessageResponseDto,
   })
   delete(@Param('id') categoryId: number): Promise<MessageResponseDto> {

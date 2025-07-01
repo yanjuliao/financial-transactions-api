@@ -16,7 +16,7 @@ export class UserResponseDto {
 
   @ApiProperty()
   @IsString()
-  senha: string;
+  password: string;
 
   @ApiProperty()
   createdAt: Date;

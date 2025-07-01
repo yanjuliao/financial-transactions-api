@@ -14,15 +14,12 @@ export class UsersRepository {
     return this.prisma.user.findMany();
   }
 
-  async findByEmail(email: string): Promise<User> {
-    const user = await this.prisma.user.findFirst({ where: { email} });
-    if (!user) throw new NotFoundException(`Usuário ${email} não encontrado`);
-    return user;
+  async findByEmail(email: string): Promise<User | null> {
+    return this.prisma.user.findFirst({ where: { email} });
   }
 
-  async findById(id: number): Promise<User> {
+  async findById(id: number): Promise<User | null> {
     const user = await this.prisma.user.findUnique({ where: { userId: id } });
-    if (!user) throw new NotFoundException('Usuário não encontrado');
     return user;
   }
 

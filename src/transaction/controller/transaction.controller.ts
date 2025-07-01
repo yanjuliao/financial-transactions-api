@@ -18,19 +18,19 @@ import { TransactionResponseDto } from '../dto/response/transaction.response.dto
 import { BalanceResponseDto } from '../dto/response/balance.response.dto';
 
 @ApiTags('Transactions')
-@ApiBearerAuth('jwt-auth') 
+@ApiBearerAuth('jwt-auth')
 @Controller('transactions')
 export class TransactionController {
   constructor(private readonly service: TransactionService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar todas as transações' })
+  @ApiOperation({ summary: 'List all transactions' })
   async getAllTransactions(): Promise<TransactionResponseDto[]> {
     return this.service.getAllTransactions();
   }
 
   @Get('period')
-  @ApiOperation({ summary: 'Buscar transações por período' })
+  @ApiOperation({ summary: 'Get transactions by period' })
   async getTransactionsByPeriod(
     @Query() dto: FilterByPeriodRequestDto,
   ): Promise<TransactionResponseDto[]> {
@@ -38,7 +38,7 @@ export class TransactionController {
   }
 
   @Get('balance')
-  @ApiOperation({ summary: 'Obter saldo de entradas e saídas por período' })
+  @ApiOperation({ summary: 'Get balance of incomes and expenses by period' })
   async getBalance(
     @Query() dto: FilterByPeriodRequestDto,
   ): Promise<BalanceResponseDto> {
@@ -46,7 +46,7 @@ export class TransactionController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Buscar transação por ID' })
+  @ApiOperation({ summary: 'Get transaction by ID' })
   async getTransactionById(
     @Param('id') transactionId: string,
   ): Promise<TransactionResponseDto> {
@@ -54,7 +54,7 @@ export class TransactionController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Criar uma nova transação' })
+  @ApiOperation({ summary: 'Create a new transaction' })
   async createTransaction(
     @Body() dto: CreateTransactionRequestDto,
   ): Promise<TransactionResponseDto> {
@@ -62,13 +62,13 @@ export class TransactionController {
   }
 
   @Post('many')
-  @ApiOperation({ summary: 'Criar várias transações' })
+  @ApiOperation({ summary: 'Create multiple transactions' })
   createTransactionsMany(@Body() dto: CreateManyTransactionRequestDto) {
     return this.service.createTransactionsMany(dto.transactions);
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Atualizar dados de uma transação' })
+  @ApiOperation({ summary: 'Update transaction data' })
   async updateTransaction(
     @Param('id') transactionId: string,
     @Body() dto: UpdateTransactionRequestDto,
@@ -77,7 +77,7 @@ export class TransactionController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Deletar uma transação' })
+  @ApiOperation({ summary: 'Delete a transaction' })
   async deleteTransaction(@Param('id') transactionId: string) {
     return this.service.deleteTransaction(Number(transactionId));
   }

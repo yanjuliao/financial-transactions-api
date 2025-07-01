@@ -14,7 +14,7 @@ export class UpdateTransactionRequestDto {
   @IsEnum(['ENTRADA', 'SAIDA'])
   type?: 'ENTRADA' | 'SAIDA';
 
-  @ApiPropertyOptional({ example: 1, description: 'ID da categoria vinculada' })
+  @ApiPropertyOptional({ example: 1, description: 'Category ID' })
   @IsNumber()
   categoryId?: number;
 }
