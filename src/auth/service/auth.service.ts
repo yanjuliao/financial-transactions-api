@@ -71,7 +71,11 @@ export class AuthService {
   }
 
   private async generateToken(user: User) {
-    const payload = { sub: user.userId, email: user.email };
+    const payload = {
+      sub: user.userId,
+      email: user.email,
+      role: user.role,
+    };
     const token = this.jwtService.sign(payload);
     await this.redisService.set(`jwt:${user.userId}`, token, 3600);
     return { access_token: token };

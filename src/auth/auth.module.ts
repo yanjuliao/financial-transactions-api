@@ -8,6 +8,7 @@ import { RedisService } from '../redis/redis.service';
 import { UsersModule } from 'src/users/users.module';
 import { RedisModule } from 'src/redis/redis.module';
 import { JwtRedisAuthGuard } from './jwt-redis-auth.guard';
+import { RolesGuard } from './roles.guard';
 
 @Module({
   imports: [
@@ -20,7 +21,13 @@ import { JwtRedisAuthGuard } from './jwt-redis-auth.guard';
     RedisModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RedisService, JwtRedisAuthGuard],
-  exports: [JwtRedisAuthGuard, AuthService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RedisService,
+    JwtRedisAuthGuard,
+    RolesGuard,
+  ],
+  exports: [JwtRedisAuthGuard, AuthService, RolesGuard],
 })
 export class AuthModule {}

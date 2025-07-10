@@ -23,4 +23,7 @@ export class UserResponseDto {
 
   @ApiProperty()
   updatedAt: Date;
+
+  @ApiProperty({ enum: ['ADMIN', 'USER'] })
+  role: 'ADMIN' | 'USER';
 }

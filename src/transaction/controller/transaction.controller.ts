@@ -16,9 +16,11 @@ import { CreateTransactionRequestDto } from '../dto/requests/create-transaction.
 import { UpdateTransactionRequestDto } from '../dto/requests/update-transaction.request.dto';
 import { TransactionResponseDto } from '../dto/response/transaction.response.dto';
 import { BalanceResponseDto } from '../dto/response/balance.response.dto';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 
 @ApiTags('Transactions')
 @ApiBearerAuth('jwt-auth')
+@Roles('ADMIN', 'USER')
 @Controller('transactions')
 export class TransactionController {
   constructor(private readonly service: TransactionService) {}

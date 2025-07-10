@@ -146,6 +146,35 @@ npm run test:cov
 
 ---
 
+## 🔐 Autorização baseada em roles (RBAC)
+
+A API utiliza controle de acesso baseado em papéis (roles) para restringir rotas de acordo com o perfil do usuário. Existem dois tipos de usuário:
+
+- **`admin`** – Acesso completo a todas as rotas.
+- **`user`** – Acesso limitado a determinadas funcionalidades.
+
+### 📜 Regras de Acesso
+
+| Módulo         | Rota                          | Roles Permitidas     |
+|----------------|-------------------------------|-----------------------|
+| **Users**      | Todas (`GET`, `POST`, `PUT`, `DELETE`) | Somente `admin`        |
+| **Transactions** | Todas as operações             | `admin`, `user`        |
+| **Categories**   | `GET /categories`             | `admin`, `user`        |
+|                | `GET /categories/:id`         | `admin`, `user`        |
+|                | `POST /categories`            | Somente `admin`        |
+|                | `POST /categories/many`       | Somente `admin`        |
+|                | `DELETE /categories/:id`      | Somente `admin`        |
+
+### 🔒 Como funciona
+
+- Cada usuário possui uma única role: `admin` ou `user`.
+- As rotas usam o decorator customizado `@Roles(...roles)` para definir quais roles têm permissão.
+- O `RolesGuard` valida a role do usuário (vinda do JWT) e compara com as roles autorizadas da rota.
+- Se a role do usuário não for permitida, a API retorna erro `403 Forbidden`.
+
+
+---
+
 ## 📌 Funcionalidades
 
 - ✅ Login e autenticação com JWT + Redis

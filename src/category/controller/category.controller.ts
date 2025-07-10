@@ -12,13 +12,16 @@ import { CreateCategoryRequestDto } from '../dto/requests/create-category.reques
 import { CreateManyCategoryRequestDto } from '../dto/requests/create-many-category.request.dto';
 import { CategoryResponseDto } from '../dto/responses/category.response.dto';
 import { MessageResponseDto } from '../dto/responses/message.response.dto';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 
 @ApiTags('Categories')
 @ApiBearerAuth('jwt-auth')
+@Roles('ADMIN')
 @Controller('categories')
 export class CategoryController {
   constructor(private readonly service: CategoryService) {}
 
+  @Roles('USER')
   @Get()
   @ApiOperation({ summary: 'List all categories' })
   @ApiResponse({
@@ -30,6 +33,7 @@ export class CategoryController {
     return this.service.getAllCategories();
   }
 
+  @Roles('USER')
   @Get(':id')
   @ApiOperation({ summary: 'Get category by ID' })
   @ApiResponse({

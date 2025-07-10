@@ -13,6 +13,7 @@ export class UserMapper {
       password: user.password,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      role: user.role
     };
   }
 
@@ -25,6 +26,7 @@ export class UserMapper {
       name: dto.name,
       email: dto.email,
       password: dto.password,
+      role: dto.role,
     };
   }
 
@@ -33,6 +35,7 @@ export class UserMapper {
       name: dto.name ?? existing.name,
       email: dto.email ?? existing.email,
       password: dto.password ?? existing.password,
+      role: dto.role ?? existing.role,
     };
   }
 }

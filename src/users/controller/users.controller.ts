@@ -18,9 +18,11 @@ import { CreateUserDto } from '../dto/requests/create-user.dto';
 import { UpdateUserDto } from '../dto/requests/update-user.dto';
 import { UsersService } from '../service/users.service';
 import { UserResponseDto } from '../dto/responses/user.response.dto';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 
 @ApiTags('Users')
 @ApiBearerAuth('jwt-auth')
+@Roles('ADMIN')
 @Controller('users')
 export class UsersController {
   constructor(private readonly service: UsersService) {}
