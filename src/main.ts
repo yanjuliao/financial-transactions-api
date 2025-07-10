@@ -5,6 +5,12 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: '*', 
+    methods: 'GET,PUT,POST,DELETE',
+    credentials: true,
+  });
+
   const config = new DocumentBuilder()
     .setTitle('Financial API')
     .setDescription('API documentation with JWT authentication')
