@@ -1,17 +1,27 @@
 import * as bcrypt from 'bcrypt';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from '../dto/requests/create-user.dto';
 import { UpdateUserDto } from '../dto/requests/update-user.dto';
 import { UsersRepository } from '../repository/users.repository';
 import { UserMapper } from '../mapper/users.mapper';
 import { UserResponseDto } from '../dto/responses/user.response.dto';
 import { User } from '@prisma/client';
+import { TransactionService } from 'src/transaction/service/transaction.service';
 
 @Injectable()
 export class UsersService {
   private USER_NOT_FOUND_MESSAGE = 'User not found';
+  private HAS_TRANSACTIONS_MESSAGE =
+    'User has transactions and cannot be deleted.';
 
-  constructor(private readonly repository: UsersRepository) {}
+  constructor(
+    private readonly repository: UsersRepository,
+    private readonly transactionService: TransactionService,
+  ) {}
 
   async create(data: CreateUserDto): Promise<UserResponseDto> {
     const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -26,9 +36,9 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User> {
-     const foundUser = await this.repository.findByEmail(email);
-     if (!foundUser) throw new NotFoundException(this.USER_NOT_FOUND_MESSAGE);
-     return foundUser;
+    const foundUser = await this.repository.findByEmail(email);
+    if (!foundUser) throw new NotFoundException(this.USER_NOT_FOUND_MESSAGE);
+    return foundUser;
   }
 
   async findById(id: number): Promise<UserResponseDto> {
@@ -48,7 +58,16 @@ export class UsersService {
 
   async delete(id: number): Promise<void> {
     const user = await this.repository.findById(id);
-    if (!user) throw new NotFoundException(this.USER_NOT_FOUND_MESSAGE);
+    if (!user) {
+      throw new NotFoundException(this.USER_NOT_FOUND_MESSAGE);
+    }
+
+    const hasTransactions =
+      await this.transactionService.hasUserTransactions(id);
+    if (hasTransactions) {
+      throw new BadRequestException(this.HAS_TRANSACTIONS_MESSAGE);
+    }
+
     return this.repository.delete(id);
   }
 }

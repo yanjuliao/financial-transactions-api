@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsNumber, IsEnum } from 'class-validator';
+import { Category, TransactionType } from 'src/transaction/enum';
 
 export class UpdateTransactionRequestDto {
   @ApiPropertyOptional({ example: '2025-06-25T13:00:00Z' })
@@ -10,11 +11,11 @@ export class UpdateTransactionRequestDto {
   @IsNumber()
   price?: number;
 
-  @ApiPropertyOptional({ example: 'ENTRADA', enum: ['ENTRADA', 'SAIDA'] })
-  @IsEnum(['ENTRADA', 'SAIDA'])
-  type?: 'ENTRADA' | 'SAIDA';
+  @ApiPropertyOptional({ example: 'ENTRADA', enum: TransactionType })
+  @IsEnum(TransactionType)
+  type: TransactionType;
 
-  @ApiPropertyOptional({ example: 1, description: 'Category ID' })
-  @IsNumber()
-  categoryId?: number;
+  @ApiPropertyOptional({ example: 'TRANSPORTE', enum: Category })
+  @IsEnum(Category)
+  category: Category;
 }

@@ -53,23 +53,27 @@ src/
 ├── auth/
 │   ├── jwt.strategy.ts
 │   ├── jwt-redis-auth.guard.ts
-│   ├── auth.service.ts
+│   ├── jwt.strategy.ts
+│   ├── roles.guard.ts
+│   ├── dto/
+│   ├── service/
+│   ├── controller/
 │   └── decorators/
-├── category/
-│   ├── controller/
-│   ├── service/
-│   ├── repository/
-│   └── dto/
 ├── transaction/
+│   ├── enum.ts
 │   ├── controller/
 │   ├── service/
 │   ├── repository/
+│   ├── mapper/
 │   └── dto/
 ├── redis/
 │   └── redis.service.ts
-├── common/
+├── users/
+│   ├── controller/
+│   ├── service/
+│   ├── repository/
 │   ├── mapper/
-│   └── prisma/
+│   └── dto/
 └── main.ts
 ```
 
@@ -159,11 +163,7 @@ A API utiliza controle de acesso baseado em papéis (roles) para restringir rota
 |----------------|-------------------------------|-----------------------|
 | **Users**      | Todas (`GET`, `POST`, `PUT`, `DELETE`) | Somente `admin`        |
 | **Transactions** | Todas as operações             | `admin`, `user`        |
-| **Categories**   | `GET /categories`             | `admin`, `user`        |
-|                | `GET /categories/:id`         | `admin`, `user`        |
-|                | `POST /categories`            | Somente `admin`        |
-|                | `POST /categories/many`       | Somente `admin`        |
-|                | `DELETE /categories/:id`      | Somente `admin`        |
+
 
 ### 🔒 Como funciona
 
@@ -180,11 +180,9 @@ A API utiliza controle de acesso baseado em papéis (roles) para restringir rota
 - ✅ Login e autenticação com JWT + Redis
 - ✅ Proteção automática de rotas com Guard global
 - ✅ Criar, atualizar e excluir transações
-- ✅ Consultar transações por ID ou todas
-- ✅ Registrar categorias personalizadas
-- ✅ Relacionar transações a categorias
-- ✅ Cadastro em massa (categorias e transações)
-- ✅ Cálculo de saldo por tipo
+- ✅ Consultar transações por ID e usuário 
+- ✅ Cadastro em massa (transações)
+- ✅ Cálculo de saldo por período
 - ✅ Validação automática de dados
 - ✅ Arquitetura em camadas (Controller, Service, Repository, Mapper)
 

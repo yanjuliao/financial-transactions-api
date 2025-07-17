@@ -7,6 +7,7 @@ import {
   Query,
   Put,
   Delete,
+  Req,
 } from '@nestjs/common';
 import { TransactionService } from '../service/transaction.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -26,47 +27,60 @@ export class TransactionController {
   constructor(private readonly service: TransactionService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List all transactions' })
-  async getAllTransactions(): Promise<TransactionResponseDto[]> {
-    return this.service.getAllTransactions();
+  @ApiOperation({ summary: 'List all transactions for the authenticated user' })
+  async getAllTransactions(@Req() req): Promise<TransactionResponseDto[]> {
+    const userId = req.user.userId;
+    return this.service.getAllTransactions(userId);
   }
 
   @Get('period')
   @ApiOperation({ summary: 'Get transactions by period' })
   async getTransactionsByPeriod(
     @Query() dto: FilterByPeriodRequestDto,
+    @Req() req,
   ): Promise<TransactionResponseDto[]> {
-    return this.service.getTransactionsByPeriod(dto);
+    const userId = req.user.userId;
+    return this.service.getTransactionsByPeriod(dto, userId);
   }
 
   @Get('balance')
   @ApiOperation({ summary: 'Get balance of incomes and expenses by period' })
   async getBalance(
     @Query() dto: FilterByPeriodRequestDto,
+    @Req() req,
   ): Promise<BalanceResponseDto> {
-    return this.service.getBalanceByPeriod(dto);
+    const userId = req.user.userId;
+    return this.service.getBalanceByPeriod(dto, userId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get transaction by ID' })
   async getTransactionById(
     @Param('id') transactionId: string,
+    @Req() req,
   ): Promise<TransactionResponseDto> {
-    return this.service.getTransactionById(Number(transactionId));
+    const userId = req.user.userId;
+    return this.service.getTransactionById(Number(transactionId), userId);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create a new transaction' })
   async createTransaction(
     @Body() dto: CreateTransactionRequestDto,
+    @Req() req,
   ): Promise<TransactionResponseDto> {
-    return this.service.createTransaction(dto);
+    const userId = req.user.userId;
+    return this.service.createTransaction(dto, userId);
   }
 
   @Post('many')
   @ApiOperation({ summary: 'Create multiple transactions' })
-  createTransactionsMany(@Body() dto: CreateManyTransactionRequestDto) {
-    return this.service.createTransactionsMany(dto.transactions);
+  async createTransactionsMany(
+    @Body() dto: CreateManyTransactionRequestDto,
+    @Req() req,
+  ) {
+    const userId = req.user.userId;
+    return this.service.createTransactionsMany(dto.transactions, userId);
   }
 
   @Put(':id')
@@ -74,13 +88,16 @@ export class TransactionController {
   async updateTransaction(
     @Param('id') transactionId: string,
     @Body() dto: UpdateTransactionRequestDto,
+    @Req() req,
   ): Promise<TransactionResponseDto> {
-    return this.service.updateTransaction(Number(transactionId), dto);
+    const userId = req.user.userId;
+    return this.service.updateTransaction(Number(transactionId), dto, userId);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a transaction' })
-  async deleteTransaction(@Param('id') transactionId: string) {
-    return this.service.deleteTransaction(Number(transactionId));
+  async deleteTransaction(@Param('id') transactionId: string, @Req() req) {
+    const userId = req.user.userId;
+    return this.service.deleteTransaction(Number(transactionId), userId);
   }
 }

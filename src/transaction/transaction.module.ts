@@ -3,11 +3,12 @@ import { TransactionService } from './service/transaction.service';
 import { TransactionRepository } from './repository/transaction.repository';
 import { TransactionController } from './controller/transaction.controller';
 import { PrismaModule } from 'prisma/prisma.module';
-import { CategoryModule } from 'src/category/category.module';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
-  imports: [PrismaModule, CategoryModule],
+  imports: [PrismaModule, UsersModule],
   controllers: [TransactionController],
   providers: [TransactionService, TransactionRepository],
+  exports: [TransactionService, TransactionRepository],
 })
 export class TransactionModule {}

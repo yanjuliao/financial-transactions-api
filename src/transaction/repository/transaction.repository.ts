@@ -6,37 +6,38 @@ import { PrismaService } from 'prisma/prisma.service';
 @Injectable()
 export class TransactionRepository {
   constructor(private readonly prisma: PrismaService) {}
-  async findAllTransactions(): Promise<
-    (Transaction & { category: { categoryId: number; name: string } })[]
-  > {
-    return this.prisma.transaction.findMany({ include: { category: true } });
+
+  async findAllTransactions(userId: number): Promise<Transaction[]> {
+    return this.prisma.transaction.findMany({
+      where: { userId },
+    });
   }
 
   async findTransactionById(
     transactionId: number,
-  ): Promise<
-    (Transaction & { category: { categoryId: number; name: string } }) | null
-  > {
-    return this.prisma.transaction.findUnique({
-      where: { transactionId },
-      include: { category: true },
+    userId: number,
+  ): Promise<Transaction | null> {
+    return this.prisma.transaction.findFirst({
+      where: {
+        transactionId,
+        userId,
+      },
     });
   }
 
   async findTransactionsByPeriod(
+    userId: number,
     startDate: Date,
     endDate: Date,
-  ): Promise<
-    (Transaction & { category: { categoryId: number; name: string } })[]
-  > {
+  ): Promise<Transaction[]> {
     return this.prisma.transaction.findMany({
       where: {
+        userId,
         date: {
           gte: new Date(startDate),
           lte: new Date(endDate),
         },
       },
-      include: { category: true },
     });
   }
 
@@ -44,12 +45,10 @@ export class TransactionRepository {
     date: Date;
     price: number;
     type: 'ENTRADA' | 'SAIDA';
-    categoryId: number;
-  }): Promise<Transaction & { category: Category }> {
-    return this.prisma.transaction.create({
-      data,
-      include: { category: true },
-    });
+    userId: number;
+    category: Category;
+  }): Promise<Transaction> {
+    return this.prisma.transaction.create({ data });
   }
 
   async createTransactionsMany(
@@ -57,7 +56,8 @@ export class TransactionRepository {
       date: Date;
       price: number;
       type: 'ENTRADA' | 'SAIDA';
-      categoryId: number;
+      userId: number;
+      category: Category;
     }[],
   ): Promise<void> {
     await this.prisma.transaction.createMany({ data });
@@ -65,20 +65,37 @@ export class TransactionRepository {
 
   async updateTransaction(
     transactionId: number,
+    userId: number,
     data: UpdateTransactionRequestDto,
-  ): Promise<Transaction & { category: Category }> {
-    const safeData = data;
-  
-    return this.prisma.transaction.update({
-      where: { transactionId },
-      data: safeData,
-      include: { category: true },
+  ): Promise<Transaction> {
+    return this.prisma.transaction
+      .updateMany({
+        where: { transactionId, userId },
+        data,
+      })
+      .then((res) => {
+        if (res.count === 0) throw new Error('Unauthorized or not found');
+        return this.findTransactionById(
+          transactionId,
+          userId,
+        ) as Promise<Transaction>;
+      });
+  }
+
+  async deleteTransaction(
+    transactionId: number,
+    userId: number,
+  ): Promise<void> {
+    await this.prisma.transaction.deleteMany({
+      where: { transactionId, userId },
     });
   }
 
-  async deleteTransaction(transactionId: number): Promise<void> {
-    await this.prisma.transaction.delete({
-      where: { transactionId: transactionId },
+  async findAnyByUserId(userId: number): Promise<boolean> {
+    const count = await this.prisma.transaction.count({
+      where: { userId },
     });
+  
+    return count > 0;
   }
 }

@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CategoryResponseDto } from 'src/category/dto/responses/category.response.dto';
+import { Category, TransactionType } from '@prisma/client';
+
+
 
 export class TransactionResponseDto {
   @ApiProperty()
@@ -11,12 +13,12 @@ export class TransactionResponseDto {
   @ApiProperty()
   price: number;
 
-  @ApiProperty({ enum: ['ENTRADA', 'SAIDA'] })
-  type: 'ENTRADA' | 'SAIDA';
+  @ApiProperty({ enum: TransactionType })
+  type: TransactionType;
 
-  @ApiProperty({
-    type: () => CategoryResponseDto,
-    description: 'Category associated with the transaction',
-  })
-  category: CategoryResponseDto;
+  @ApiProperty({ enum: Category })
+  category: Category;
+
+  @ApiProperty()
+  userId: number;
 }

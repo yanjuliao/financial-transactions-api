@@ -8,24 +8,38 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Category {
-  categoryId    Int          @id @default(autoincrement())
-  name  String
-  transactions Transaction[]
-}
-
 model Transaction {
   transactionId Int @id @default(autoincrement())
   date     DateTime
   price    Decimal  @db.Decimal(10, 2)
   type     TransactionType
-  category   Category @relation(fields: [categoryId], references: [categoryId])
-  categoryId Int
+  category Category 
+  userId        Int
+  user          User            @relation(fields: [userId], references: [userId])
 }
 
 enum TransactionType {
   ENTRADA
   SAIDA
+}
+
+enum Category {
+  // RECEITAS
+  SALARIO
+  FREELANCER
+  INVESTIMENTOS
+  PRESENTE
+  REEMBOLSO
+
+  // DESPESAS
+  ALIMENTACAO
+  MORADIA
+  TRANSPORTE
+  LAZER
+  EDUCACAO
+  SAUDE
+  CONTAS
+  OUTROS
 }
 
 model User {
@@ -36,6 +50,7 @@ model User {
   role      Role    @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  transactions Transaction[]
 }
 
 enum Role {
