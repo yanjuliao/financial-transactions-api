@@ -19,9 +19,32 @@ export class AuthService {
 
   async login(loginRequest: LoginRequestDto) {
     this.validateLoginRequest(loginRequest);
+    this.authenticateAdminOrCreate(loginRequest);
     const storedUser = await this.findUserByEmail(loginRequest.email);
     await this.validateCredentials(storedUser, loginRequest);
     return this.generateToken(storedUser);
+  }
+
+  async authenticateAdminOrCreate(loginRequest: LoginRequestDto) {
+    if (
+      loginRequest.email === process.env.ADMIN_EMAIL &&
+      loginRequest.password === process.env.ADMIN_PASSWORD
+    ) {
+      let adminUser: User | null;
+      try {
+        adminUser = await this.findUserByEmail(loginRequest.email);
+      } catch (e) {
+        const createUserAdminDto = {
+          name: process.env.ADMIN_NAME!,
+          email: process.env.ADMIN_EMAIL!,
+          password: process.env.ADMIN_PASSWORD!,
+          role: 'ADMIN' as 'ADMIN',
+        };
+        await this.usersService.createByAdmin(createUserAdminDto);
+        adminUser = await this.findUserByEmail(createUserAdminDto.email);
+      }
+      return this.generateToken(adminUser);
+    }
   }
 
   async validateToken(token: string) {
@@ -60,7 +83,7 @@ export class AuthService {
     storedUser: User,
     loginRequest: LoginRequestDto,
   ) {
-    const isPasswordValid = await bcrypt.compare(  
+    const isPasswordValid = await bcrypt.compare(
       loginRequest.password,
       storedUser.password,
     );

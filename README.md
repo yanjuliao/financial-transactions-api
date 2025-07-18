@@ -161,7 +161,8 @@ A API utiliza controle de acesso baseado em papéis (roles) para restringir rota
 
 | Módulo         | Rota                          | Roles Permitidas     |
 |----------------|-------------------------------|-----------------------|
-| **Users**      | Todas (`GET`, `POST`, `PUT`, `DELETE`) | Somente `admin`        |
+| **Users**      | Somente (`POST`, `PUT`) | `user`, `admin`        |
+| **Users**      | Todas com /admin(`POST`, `PUT`, `GET`, `DELETE`) | Somente `admin`       |
 | **Transactions** | Todas as operações             | `admin`, `user`        |
 
 

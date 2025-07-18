@@ -11,6 +11,8 @@ import { UserMapper } from '../mapper/users.mapper';
 import { UserResponseDto } from '../dto/responses/user.response.dto';
 import { User } from '@prisma/client';
 import { TransactionService } from 'src/transaction/service/transaction.service';
+import { CreateUserAdminDto } from '../dto/requests/create-user-admin.dto';
+import { UpdateUserAdminDto } from '../dto/requests/update-user-admin.dto';
 
 @Injectable()
 export class UsersService {
@@ -25,7 +27,14 @@ export class UsersService {
 
   async create(data: CreateUserDto): Promise<UserResponseDto> {
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    const entity = UserMapper.toEntity({ ...data, password: hashedPassword });
+    const entity = UserMapper.toCreateEntity({ ...data, password: hashedPassword });
+    const user = await this.repository.create(entity);
+    return UserMapper.toResponseDto(user);
+  }
+
+  async createByAdmin(data: CreateUserAdminDto): Promise<UserResponseDto> {
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const entity = UserMapper.toCreateAdminEntity({ ...data, password: hashedPassword });
     const user = await this.repository.create(entity);
     return UserMapper.toResponseDto(user);
   }
@@ -51,7 +60,18 @@ export class UsersService {
     const foundEntity = await this.repository.findById(id);
     if (!foundEntity) throw new NotFoundException(this.USER_NOT_FOUND_MESSAGE);
 
-    const entityToUpdate = UserMapper.toUpdateEntity(data, foundEntity);
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const entityToUpdate = UserMapper.toUpdateEntity({ ...data, password: hashedPassword }, foundEntity);
+    const updated = await this.repository.update(id, entityToUpdate);
+    return UserMapper.toResponseDto(updated);
+  }
+
+  async updateByAdmin(id: number, data: UpdateUserAdminDto): Promise<UserResponseDto> {
+    const foundEntity = await this.repository.findById(id);
+    if (!foundEntity) throw new NotFoundException(this.USER_NOT_FOUND_MESSAGE);
+
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const entityToUpdate = UserMapper.toUpdateAdminEntity({ ...data, password: hashedPassword }, foundEntity);
     const updated = await this.repository.update(id, entityToUpdate);
     return UserMapper.toResponseDto(updated);
   }
