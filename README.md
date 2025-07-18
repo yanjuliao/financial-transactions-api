@@ -212,7 +212,7 @@ docker exec -it api npx prisma migrate deploy
 ## 👨‍💻 Autor
 
 Desenvolvido por **Yan Julião**  
-📧 yanjuliao7@email.com  
+📧 yanjuliao7@gmail.com  
 🔗 [linkedin.com/in/yan-juliao](https://linkedin.com/in/yan-juliao)  
 🐙 [github.com/yanjuliao](https://github.com/yanjuliao)
 
