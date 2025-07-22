@@ -3,6 +3,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from '../dto/requests/create-user.dto';
 import { UpdateUserDto } from '../dto/requests/update-user.dto';
@@ -11,14 +12,14 @@ import { UserMapper } from '../mapper/users.mapper';
 import { UserResponseDto } from '../dto/responses/user.response.dto';
 import { User } from '@prisma/client';
 import { TransactionService } from 'src/transaction/service/transaction.service';
-import { CreateUserAdminDto } from '../dto/requests/create-user-admin.dto';
-import { UpdateUserAdminDto } from '../dto/requests/update-user-admin.dto';
 
 @Injectable()
 export class UsersService {
   private USER_NOT_FOUND_MESSAGE = 'User not found';
   private HAS_TRANSACTIONS_MESSAGE =
     'User has transactions and cannot be deleted.';
+  private EMAIL_IN_USE_MESSAGE = 'Email already in use';
+  private INVALID_CREDENTIALS_MESSAGE = 'invalid_username_or_password';
 
   constructor(
     private readonly repository: UsersRepository,
@@ -26,22 +27,48 @@ export class UsersService {
   ) {}
 
   async create(data: CreateUserDto): Promise<UserResponseDto> {
+    const storedUser = await this.repository.findByEmail(data.email);
+    if (storedUser) {
+      throw new BadRequestException(this.EMAIL_IN_USE_MESSAGE);
+    }
+
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    const entity = UserMapper.toCreateEntity({ ...data, password: hashedPassword });
+    const entity = UserMapper.toCreateEntity({
+      ...data,
+      password: hashedPassword,
+      role: 'USER',
+    });
+
     const user = await this.repository.create(entity);
     return UserMapper.toResponseDto(user);
   }
 
-  async createByAdmin(data: CreateUserAdminDto): Promise<UserResponseDto> {
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    const entity = UserMapper.toCreateAdminEntity({ ...data, password: hashedPassword });
-    const user = await this.repository.create(entity);
-    return UserMapper.toResponseDto(user);
+  async createAdmin(): Promise<User> {
+    const adminUser = await this.repository.findByEmail(process.env.ADMIN_EMAIL!);
+    if (!adminUser) {
+      const createUserAdminDto = this.buildAdminUserDto();
+      const hashedPassword = await bcrypt.hash(createUserAdminDto.password, 10);
+      const entity = UserMapper.toCreateEntity({
+        ...createUserAdminDto,
+        password: hashedPassword,
+      });
+      const userAdmin = await this.repository.create(entity);
+      return UserMapper.toResponseDto(userAdmin);
+    }
+    return UserMapper.toResponseDto(adminUser);
   }
 
   async findAll(): Promise<UserResponseDto[]> {
     const users = await this.repository.findAll();
     return users.map(UserMapper.toResponseDto);
+  }
+
+  async findByEmailValidation(email: string) {
+    if (!email) {
+      throw new UnauthorizedException(this.INVALID_CREDENTIALS_MESSAGE);
+    }
+
+    return await this.findByEmail(email);
   }
 
   async findByEmail(email: string): Promise<User> {
@@ -57,37 +84,33 @@ export class UsersService {
   }
 
   async update(id: number, data: UpdateUserDto): Promise<UserResponseDto> {
-    const foundEntity = await this.repository.findById(id);
-    if (!foundEntity) throw new NotFoundException(this.USER_NOT_FOUND_MESSAGE);
-
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    const entityToUpdate = UserMapper.toUpdateEntity({ ...data, password: hashedPassword }, foundEntity);
-    const updated = await this.repository.update(id, entityToUpdate);
-    return UserMapper.toResponseDto(updated);
-  }
-
-  async updateByAdmin(id: number, data: UpdateUserAdminDto): Promise<UserResponseDto> {
-    const foundEntity = await this.repository.findById(id);
-    if (!foundEntity) throw new NotFoundException(this.USER_NOT_FOUND_MESSAGE);
-
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    const entityToUpdate = UserMapper.toUpdateAdminEntity({ ...data, password: hashedPassword }, foundEntity);
+    const foundEntity = await this.findById(id);
+    let updatedData = { ...data };
+    if (data.password) {
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      updatedData.password = hashedPassword;
+    }
+    const entityToUpdate = UserMapper.toUpdateEntity(updatedData, foundEntity);
     const updated = await this.repository.update(id, entityToUpdate);
     return UserMapper.toResponseDto(updated);
   }
 
   async delete(id: number): Promise<void> {
-    const user = await this.repository.findById(id);
-    if (!user) {
-      throw new NotFoundException(this.USER_NOT_FOUND_MESSAGE);
-    }
-
+    await this.findById(id);
     const hasTransactions =
       await this.transactionService.hasUserTransactions(id);
     if (hasTransactions) {
       throw new BadRequestException(this.HAS_TRANSACTIONS_MESSAGE);
     }
-
     return this.repository.delete(id);
+  }
+
+  buildAdminUserDto(): CreateUserDto {
+    return {
+      name: process.env.ADMIN_NAME!,
+      email: process.env.ADMIN_EMAIL!,
+      password: process.env.ADMIN_PASSWORD!,
+      role: 'ADMIN',
+    };
   }
 }

@@ -7,12 +7,13 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from './decorators/public.decorator';
 import { AuthService } from './service/auth.service';
+import { TokenService } from './service/token.service';
 
 @Injectable()
 export class JwtRedisAuthGuard extends AuthGuard('jwt') {
   constructor(
     private reflector: Reflector,
-    private readonly authService: AuthService,
+    private readonly tokenService: TokenService,
   ) {
     super();
   }
@@ -29,7 +30,7 @@ export class JwtRedisAuthGuard extends AuthGuard('jwt') {
     const request = context.switchToHttp().getRequest();
     const token = request.headers.authorization?.replace('Bearer ', '');
 
-    this.authService.validateToken(token);
+    this.tokenService.validateToken(token);
 
     return activated;
   }
