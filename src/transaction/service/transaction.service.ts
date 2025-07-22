@@ -12,11 +12,11 @@ import { TransactionRepository } from "../repository/transaction.repository";
 
 @Injectable()
 export class TransactionService {
-  private TRANSACTION_NOT_FOUND_MESSAGE = 'Transaction not found';
-  private TRANSACTION_CREATED_MESSAGE = 'Transaction created successfully';
+  private TRANSACTION_NOT_FOUND_MESSAGE = 'transaction_not_found';
+  private TRANSACTION_CREATED_MESSAGE = 'transaction_created_successfully';
   private CATEGORY_VALIDATION_BY_TYPE_MESSAGE =
-    'Invalid category for the specified type.';
-  private NOT_INFORMED_TYPE_OR_CATEGORY_MESSAGE = 'Type or category not informated.';
+    'invalid_category_for_the_specified_type.';
+  private NOT_INFORMED_TYPE_OR_CATEGORY_MESSAGE = 'type_or_category_not_informated.';
 
   constructor(
     private readonly repository: TransactionRepository

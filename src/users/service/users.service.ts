@@ -15,10 +15,10 @@ import { TransactionService } from 'src/transaction/service/transaction.service'
 
 @Injectable()
 export class UsersService {
-  private USER_NOT_FOUND_MESSAGE = 'User not found';
+  private USER_NOT_FOUND_MESSAGE = 'user_not_found';
   private HAS_TRANSACTIONS_MESSAGE =
-    'User has transactions and cannot be deleted.';
-  private EMAIL_IN_USE_MESSAGE = 'Email already in use';
+    'user_has_transactions';
+  private EMAIL_IN_USE_MESSAGE = 'email_already_in_use';
   private INVALID_CREDENTIALS_MESSAGE = 'invalid_username_or_password';
 
   constructor(

@@ -18,24 +18,9 @@ export class AuthService {
 
   async login(loginRequest: LoginRequestDto) {
     this.validateLoginRequest(loginRequest);
-    if (this.isAdminCredentials(loginRequest)) {
-      return this.authenticateAdminOrCreate();
-    }
     const storedUser = await this.usersService.findByEmailValidation(loginRequest.email);
     await this.validateCredentials(storedUser, loginRequest);
     return this.tokenService.generateToken(storedUser);
-  }
-
-  async authenticateAdminOrCreate() {
-    const adminUser = await this.usersService.createAdmin()
-    return this.tokenService.generateToken(adminUser);
-  }
-
-  private isAdminCredentials(loginRequest: LoginRequestDto): boolean {
-    return (
-      loginRequest.email === process.env.ADMIN_EMAIL &&
-      loginRequest.password === process.env.ADMIN_PASSWORD
-    );
   }
 
   private validateLoginRequest(loginRequest: LoginRequestDto) {

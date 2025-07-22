@@ -18,10 +18,11 @@ import { UpdateTransactionRequestDto } from '../dto/requests/update-transaction.
 import { TransactionResponseDto } from '../dto/response/transaction.response.dto';
 import { BalanceResponseDto } from '../dto/response/balance.response.dto';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import { RoleType } from 'src/users/enum';
 
 @ApiTags('Transactions')
 @ApiBearerAuth('jwt-auth')
-@Roles('ADMIN', 'USER')
+@Roles(RoleType.USER, RoleType.ADMIN)
 @Controller('transactions')
 export class TransactionController {
   constructor(private readonly service: TransactionService) {}
