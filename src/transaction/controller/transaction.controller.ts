@@ -31,7 +31,7 @@ export class TransactionController {
   @ApiOperation({ summary: 'List all transactions for the authenticated user' })
   async getAllTransactions(@Req() req): Promise<TransactionResponseDto[]> {
     const userId = req.user.userId;
-    return this.service.getAllTransactions(userId);
+    return this.service.findAllTransactions(userId);
   }
 
   @Get('period')
@@ -41,7 +41,7 @@ export class TransactionController {
     @Req() req,
   ): Promise<TransactionResponseDto[]> {
     const userId = req.user.userId;
-    return this.service.getTransactionsByPeriod(dto, userId);
+    return this.service.findTransactionsByPeriod(dto, userId);
   }
 
   @Get('balance')
@@ -51,7 +51,7 @@ export class TransactionController {
     @Req() req,
   ): Promise<BalanceResponseDto> {
     const userId = req.user.userId;
-    return this.service.getBalanceByPeriod(dto, userId);
+    return this.service.findBalanceByPeriod(dto, userId);
   }
 
   @Get(':id')
@@ -61,7 +61,7 @@ export class TransactionController {
     @Req() req,
   ): Promise<TransactionResponseDto> {
     const userId = req.user.userId;
-    return this.service.getTransactionById(Number(transactionId), userId);
+    return this.service.findTransactionById(Number(transactionId), userId);
   }
 
   @Post()

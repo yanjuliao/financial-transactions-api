@@ -28,7 +28,9 @@ import { RoleType } from '../enum';
 @Roles(RoleType.ADMIN)
 @Controller('users')
 export class UsersController {
-  private FORBIDDEN_MESSAGE = 'You can only view your own data.';
+  private FORBIDDEN_MESSAGE = 'you_can_only_view_your_own_data.';
+  private CANNOT_CREATE_ADMIN_MESSAGE = 'you_are_not_authorized_to_create_an_admin_user.';
+
 
   constructor(private readonly service: UsersService) {}
 
@@ -36,7 +38,11 @@ export class UsersController {
   @Roles(RoleType.USER, RoleType.ADMIN)
   @ApiOperation({ summary: 'Create new user' })
   @ApiResponse({ status: 201, type: UserResponseDto })
-  create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
+  create(@Body() dto: CreateUserDto, @Req() req): Promise<UserResponseDto> {
+    const userRole = req.user.role;
+    if (userRole !== RoleType.ADMIN && dto.role === RoleType.ADMIN) {
+      throw new ForbiddenException(this.CANNOT_CREATE_ADMIN_MESSAGE);
+    }
     return this.service.create(dto);
   }
 
@@ -51,7 +57,10 @@ export class UsersController {
   @Roles(RoleType.USER, RoleType.ADMIN)
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, type: UserResponseDto })
-  findById(@Param('id', ParseIntPipe) id: number, @Req() req): Promise<UserResponseDto> {
+  findById(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req,
+  ): Promise<UserResponseDto> {
     const userId = req.user.userId;
     const userRole = req.user.role;
     if (userRole !== RoleType.ADMIN && userId !== id) {

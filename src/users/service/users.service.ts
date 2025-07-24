@@ -12,12 +12,12 @@ import { UserMapper } from '../mapper/users.mapper';
 import { UserResponseDto } from '../dto/responses/user.response.dto';
 import { User } from '@prisma/client';
 import { TransactionService } from 'src/transaction/service/transaction.service';
+import { RoleType } from '../enum';
 
 @Injectable()
 export class UsersService {
   private USER_NOT_FOUND_MESSAGE = 'user_not_found';
-  private HAS_TRANSACTIONS_MESSAGE =
-    'user_has_transactions';
+  private HAS_TRANSACTIONS_MESSAGE = 'user_has_transactions';
   private EMAIL_IN_USE_MESSAGE = 'email_already_in_use';
   private INVALID_CREDENTIALS_MESSAGE = 'invalid_username_or_password';
 
@@ -27,35 +27,35 @@ export class UsersService {
   ) {}
 
   async create(data: CreateUserDto): Promise<UserResponseDto> {
+    return this.createIfEmailNotExists({ ...data }, true);
+  }
+
+  async createAdmin(): Promise<UserResponseDto> {
+    const adminDto = this.buildAdminUserDto();
+    return this.createIfEmailNotExists(adminDto, false);
+  }
+
+  private async createIfEmailNotExists(
+    data: CreateUserDto,
+    throwIfExists: boolean,
+  ): Promise<UserResponseDto> {
     const storedUser = await this.repository.findByEmail(data.email);
+
     if (storedUser) {
-      throw new BadRequestException(this.EMAIL_IN_USE_MESSAGE);
+      if (throwIfExists) {
+        throw new BadRequestException(this.EMAIL_IN_USE_MESSAGE);
+      }
+      return UserMapper.toResponseDto(storedUser);
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const entity = UserMapper.toCreateEntity({
       ...data,
       password: hashedPassword,
-      role: 'USER',
     });
-
     const user = await this.repository.create(entity);
-    return UserMapper.toResponseDto(user);
-  }
 
-  async createAdmin(): Promise<User> {
-    const adminUser = await this.repository.findByEmail(process.env.ADMIN_EMAIL!);
-    if (!adminUser) {
-      const createUserAdminDto = this.buildAdminUserDto();
-      const hashedPassword = await bcrypt.hash(createUserAdminDto.password, 10);
-      const entity = UserMapper.toCreateEntity({
-        ...createUserAdminDto,
-        password: hashedPassword,
-      });
-      const userAdmin = await this.repository.create(entity);
-      return UserMapper.toResponseDto(userAdmin);
-    }
-    return UserMapper.toResponseDto(adminUser);
+    return UserMapper.toResponseDto(user);
   }
 
   async findAll(): Promise<UserResponseDto[]> {
@@ -77,18 +77,22 @@ export class UsersService {
     return foundUser;
   }
 
+  async findEntityById(id: number): Promise<User> {
+    const user = await this.repository.findById(id);
+    if (!user) throw new NotFoundException(this.USER_NOT_FOUND_MESSAGE);
+    return user;
+  }
+
   async findById(id: number): Promise<UserResponseDto> {
-    const foundUser = await this.repository.findById(id);
-    if (!foundUser) throw new NotFoundException(this.USER_NOT_FOUND_MESSAGE);
-    return UserMapper.toResponseDto(foundUser);
+    const user = await this.findEntityById(id);
+    return UserMapper.toResponseDto(user);
   }
 
   async update(id: number, data: UpdateUserDto): Promise<UserResponseDto> {
-    const foundEntity = await this.findById(id);
-    let updatedData = { ...data };
+    const foundEntity = await this.findEntityById(id);
+    const updatedData: Partial<User> = { ...data };
     if (data.password) {
-      const hashedPassword = await bcrypt.hash(data.password, 10);
-      updatedData.password = hashedPassword;
+      updatedData.password = await bcrypt.hash(data.password, 10);
     }
     const entityToUpdate = UserMapper.toUpdateEntity(updatedData, foundEntity);
     const updated = await this.repository.update(id, entityToUpdate);
@@ -96,13 +100,13 @@ export class UsersService {
   }
 
   async delete(id: number): Promise<void> {
-    await this.findById(id);
+    await this.findEntityById(id);
     const hasTransactions =
       await this.transactionService.hasUserTransactions(id);
     if (hasTransactions) {
       throw new BadRequestException(this.HAS_TRANSACTIONS_MESSAGE);
     }
-    return this.repository.delete(id);
+    await this.repository.delete(id);
   }
 
   buildAdminUserDto(): CreateUserDto {
@@ -110,7 +114,7 @@ export class UsersService {
       name: process.env.ADMIN_NAME!,
       email: process.env.ADMIN_EMAIL!,
       password: process.env.ADMIN_PASSWORD!,
-      role: 'ADMIN',
+      role: RoleType.ADMIN,
     };
   }
 }

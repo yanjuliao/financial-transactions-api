@@ -2,6 +2,7 @@ import { User } from '@prisma/client';
 import { UserResponseDto } from '../dto/responses/user.response.dto';
 import { CreateUserDto } from '../dto/requests/create-user.dto';
 import { UpdateUserDto } from '../dto/requests/update-user.dto';
+import { RoleType } from '../enum';
 
 
 export class UserMapper {
@@ -26,7 +27,7 @@ export class UserMapper {
       name: dto.name,
       email: dto.email,
       password: dto.password,
-      role: dto.role,
+      role: dto.role ? dto.role : RoleType.USER,
     };
   }
 
