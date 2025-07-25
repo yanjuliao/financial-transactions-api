@@ -1,4 +1,4 @@
-export enum Category {
+export enum CategoryType {
   // RECEITAS
   SALARIO = 'SALARIO',
   FREELANCER = 'FREELANCER',
@@ -23,27 +23,27 @@ export enum TransactionType {
 }
 
 const incomeCategories = [
-  Category.SALARIO,
-  Category.FREELANCER,
-  Category.INVESTIMENTOS,
-  Category.PRESENTE,
-  Category.REEMBOLSO,
+  CategoryType.SALARIO,
+  CategoryType.FREELANCER,
+  CategoryType.INVESTIMENTOS,
+  CategoryType.PRESENTE,
+  CategoryType.REEMBOLSO,
 ];
 
 const expenseCategories = [
-  Category.ALIMENTACAO,
-  Category.MORADIA,
-  Category.TRANSPORTE,
-  Category.LAZER,
-  Category.EDUCACAO,
-  Category.SAUDE,
-  Category.CONTAS,
-  Category.OUTROS,
+  CategoryType.ALIMENTACAO,
+  CategoryType.MORADIA,
+  CategoryType.TRANSPORTE,
+  CategoryType.LAZER,
+  CategoryType.EDUCACAO,
+  CategoryType.SAUDE,
+  CategoryType.CONTAS,
+  CategoryType.OUTROS,
 ];
 
 export function isCategoryValidForType(
   type: TransactionType,
-  category: Category,
+  category: CategoryType,
 ): boolean {
   if (type === TransactionType.ENTRADA) {
     return incomeCategories.includes(category);

@@ -16,12 +16,13 @@ import { CreateManyTransactionRequestDto } from '../dto/requests/create-many-tra
 import { CreateTransactionRequestDto } from '../dto/requests/create-transaction.request.dto';
 import { UpdateTransactionRequestDto } from '../dto/requests/update-transaction.request.dto';
 import { TransactionResponseDto } from '../dto/response/transaction.response.dto';
-import { BalanceResponseDto } from '../dto/response/balance.response.dto';
-import { Roles } from 'src/auth/decorators/roles.decorator';
+import { BalanceResponseDto } from '../../user-balance/dto/response/balance.response.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { RoleType } from 'src/users/enum';
 
 @ApiTags('Transactions')
 @ApiBearerAuth('jwt-auth')
-@Roles('ADMIN', 'USER')
+@Roles(RoleType.USER, RoleType.ADMIN)
 @Controller('transactions')
 export class TransactionController {
   constructor(private readonly service: TransactionService) {}
@@ -30,7 +31,7 @@ export class TransactionController {
   @ApiOperation({ summary: 'List all transactions for the authenticated user' })
   async getAllTransactions(@Req() req): Promise<TransactionResponseDto[]> {
     const userId = req.user.userId;
-    return this.service.getAllTransactions(userId);
+    return this.service.findTransactions(userId);
   }
 
   @Get('period')
@@ -40,17 +41,7 @@ export class TransactionController {
     @Req() req,
   ): Promise<TransactionResponseDto[]> {
     const userId = req.user.userId;
-    return this.service.getTransactionsByPeriod(dto, userId);
-  }
-
-  @Get('balance')
-  @ApiOperation({ summary: 'Get balance of incomes and expenses by period' })
-  async getBalance(
-    @Query() dto: FilterByPeriodRequestDto,
-    @Req() req,
-  ): Promise<BalanceResponseDto> {
-    const userId = req.user.userId;
-    return this.service.getBalanceByPeriod(dto, userId);
+    return this.service.findTransactionsByPeriod(dto, userId);
   }
 
   @Get(':id')
@@ -60,7 +51,7 @@ export class TransactionController {
     @Req() req,
   ): Promise<TransactionResponseDto> {
     const userId = req.user.userId;
-    return this.service.getTransactionById(Number(transactionId), userId);
+    return this.service.findTransactionById(Number(transactionId), userId);
   }
 
   @Post()

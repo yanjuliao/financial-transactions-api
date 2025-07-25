@@ -19,72 +19,61 @@ import { CreateUserDto } from '../dto/requests/create-user.dto';
 import { UpdateUserDto } from '../dto/requests/update-user.dto';
 import { UsersService } from '../service/users.service';
 import { UserResponseDto } from '../dto/responses/user.response.dto';
-import { Roles } from 'src/auth/decorators/roles.decorator';
-import { UpdateUserAdminDto } from '../dto/requests/update-user-admin.dto';
-import { CreateUserAdminDto } from '../dto/requests/create-user-admin.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { RoleType } from '../enum';
+import { AllowOwnerOrAdmin } from 'src/common/decorators/allow-owner-or-admin.decorator';
 
 @ApiTags('Users')
 @ApiBearerAuth('jwt-auth')
-@Roles('ADMIN')
+@Roles(RoleType.ADMIN)
 @Controller('users')
 export class UsersController {
   constructor(private readonly service: UsersService) {}
 
   @Post()
-  @Roles('USER', 'ADMIN')
+  @Roles(RoleType.USER, RoleType.ADMIN)
   @ApiOperation({ summary: 'Create new user' })
   @ApiResponse({ status: 201, type: UserResponseDto })
-  create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
-    return this.service.create(dto);
+  create(@Body() dto: CreateUserDto, @Req() req): Promise<UserResponseDto> {
+    const userRole = req.user.role;
+    this.service.validateCreate(dto, userRole);
+    return this.service.createUserRegular(dto);
   }
 
-  @Post('admin')
-  @ApiOperation({ summary: 'Create new user by admin' })
-  @ApiResponse({ status: 201, type: UserResponseDto })
-  createByAdmin(@Body() dto: CreateUserAdminDto): Promise<UserResponseDto> {
-    return this.service.createByAdmin(dto);
-  }
-
-  @Get('admin')
+  @Get()
   @ApiOperation({ summary: 'List all users' })
   @ApiResponse({ status: 200, type: [UserResponseDto] })
   findAll(): Promise<UserResponseDto[]> {
-    return this.service.findAll();
+    return this.service.findUsers();
   }
 
-  @Get('admin/:id')
+  @Get(':id')
+  @Roles(RoleType.USER, RoleType.ADMIN)
+  @AllowOwnerOrAdmin()
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, type: UserResponseDto })
-  findById(@Param('id', ParseIntPipe) id: number): Promise<UserResponseDto> {
-    return this.service.findById(id);
-  }
-
-  @Put('admin/:id')
-  @ApiOperation({ summary: 'Update user admin by ID' })
-  @ApiResponse({ status: 200, type: UserResponseDto })
-  updateByAdmin(
+  findById(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateUserAdminDto,
   ): Promise<UserResponseDto> {
-    return this.service.updateByAdmin(id, dto);
+    return this.service.findUserById(id);
   }
 
-  @Put()
-  @Roles('USER', 'ADMIN')
+  @Put(':id')
+  @Roles(RoleType.USER, RoleType.ADMIN)
+  @AllowOwnerOrAdmin()
   @ApiOperation({ summary: 'Update user by ID' })
   @ApiResponse({ status: 200, type: UserResponseDto })
   update(
     @Body() dto: UpdateUserDto,
-    @Req() req,
+    @Param('id', ParseIntPipe) id: number,
   ): Promise<UserResponseDto> {
-    const userId = req.user.userId;
-    return this.service.update(userId, dto);
+    return this.service.updateUser(id, dto);
   }
 
-  @Delete('admin/:id')
+  @Delete(':id')
   @ApiOperation({ summary: 'Delete user by ID' })
   @ApiResponse({ status: 204, description: 'User successfully deleted' })
   remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.service.delete(id);
+    return this.service.deleteUser(id);
   }
 }

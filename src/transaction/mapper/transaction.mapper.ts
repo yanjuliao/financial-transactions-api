@@ -1,13 +1,13 @@
 import { Category, Transaction as PrismaTransaction } from '@prisma/client';
 import { TransactionResponseDto } from '../dto/response/transaction.response.dto';
 import { CreateTransactionRequestDto } from '../dto/requests/create-transaction.request.dto';
-import { Decimal } from '@prisma/client/runtime/library';
+import { TransactionType } from '../enum';
 
 export class TransactionMapper {
   static toEntity(userId: number, dto: CreateTransactionRequestDto): {
     date: Date;
     price: number;
-    type: 'ENTRADA' | 'SAIDA';
+    type: TransactionType;
     userId: number;
     category: Category;
   } {

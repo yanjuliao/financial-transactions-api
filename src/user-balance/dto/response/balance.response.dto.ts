@@ -4,5 +4,5 @@ import { IsNumber } from 'class-validator';
 export class BalanceResponseDto {
   @ApiProperty()
   @IsNumber()
-  saldo: number;
+  balance: number;
 }

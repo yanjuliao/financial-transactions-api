@@ -1,13 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { JwtRedisAuthGuard } from './auth/jwt-redis-auth.guard';
-import { RolesGuard } from './auth/roles.guard';
+import { JwtRedisAuthGuard } from './common/guards/jwt-redis-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
+import { UsersService } from './users/service/users.service';
+import { OwnerOrAdminGuard } from './common/guards/owner-or-admin.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalGuards(app.get(JwtRedisAuthGuard), app.get(RolesGuard));
+  app.useGlobalGuards(app.get(JwtRedisAuthGuard), app.get(RolesGuard), app.get(OwnerOrAdminGuard));
 
   app.enableCors({
     origin: '*',
@@ -33,6 +35,9 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
+
+  const usersService = app.get(UsersService);
+  await usersService.createUserAdmin();
 
   await app.listen(3000);
 }
