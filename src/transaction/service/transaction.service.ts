@@ -3,17 +3,16 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { Decimal } from '@prisma/client/runtime/library';
 import { CreateTransactionRequestDto } from '../dto/requests/create-transaction.request.dto';
 import { FilterByPeriodRequestDto } from '../dto/requests/filter-by-period.request.dto';
 import { UpdateTransactionRequestDto } from '../dto/requests/update-transaction.request.dto';
-import { BalanceResponseDto } from '../dto/response/balance.response.dto';
 import { MessageResponseDto } from '../dto/response/message.response.dto';
 import { TransactionResponseDto } from '../dto/response/transaction.response.dto';
 import { CategoryType, TransactionType, isCategoryValidForType } from '../enum';
 import { TransactionMapper } from '../mapper/transaction.mapper';
 import { TransactionRepository } from '../repository/transaction.repository';
-import { Category, Transaction } from '@prisma/client';
+import { UserBalanceService } from 'src/user-balance/service/user-balance.service';
+import { Transaction } from '@prisma/client';
 
 @Injectable()
 export class TransactionService {
@@ -25,10 +24,14 @@ export class TransactionService {
   private readonly NOT_PROVIDED_TYPE_OR_CATEGORY_MESSAGE =
     'type_or_category_not_provided';
 
-  constructor(private readonly repository: TransactionRepository) {}
+  constructor(
+    private readonly repository: TransactionRepository,
+    
+    private readonly userBalanceService: UserBalanceService,
+  ) {}
 
-  async findAllTransactions(userId: number): Promise<TransactionResponseDto[]> {
-    const transactions = await this.repository.findAllTransactions(userId);
+  async findTransactions(userId: number): Promise<TransactionResponseDto[]> {
+    const transactions = await this.repository.findTransactions(userId);
     return TransactionMapper.toResponseDtoList(transactions);
   }
 
@@ -58,16 +61,11 @@ export class TransactionService {
     return TransactionMapper.toResponseDtoList(transactions);
   }
 
-  async findBalanceByPeriod(
-    dto: FilterByPeriodRequestDto,
+  async findTransactionsUntilDate(
     userId: number,
-  ): Promise<BalanceResponseDto> {
-    const transactions = await this.repository.findTransactionsByPeriod(
-      userId,
-      dto.startDate,
-      dto.endDate,
-    );
-    return this.calculateBalance(transactions);
+    untilDate: Date,
+  ): Promise<Transaction[]> {
+    return this.repository.findTransactionsUntilDate(userId, untilDate);
   }
 
   async createTransaction(
@@ -77,6 +75,8 @@ export class TransactionService {
     this.validateCategoryForType(dto.type, dto.category);
     const entity = TransactionMapper.toEntity(userId, dto);
     const saved = await this.repository.createTransaction(entity);
+
+    this.userBalanceService.updateSnapshotsWithRetry(saved.userId, saved.date);
     return TransactionMapper.toResponseDto(saved);
   }
 
@@ -90,6 +90,16 @@ export class TransactionService {
 
     const entities = dtos.map((dto) => TransactionMapper.toEntity(userId, dto));
     await this.repository.createTransactionsMany(entities);
+
+    const uniqueDates = Array.from(
+      new Set(dtos.map((dto) => new Date(dto.date).toISOString())),
+    )
+      .map((date) => new Date(date))
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    for (const date of uniqueDates) {
+      this.userBalanceService.updateSnapshotsWithRetry(userId, date);
+    }
 
     return { message: this.TRANSACTION_CREATED_MESSAGE };
   }
@@ -112,6 +122,8 @@ export class TransactionService {
       userId,
       dto,
     );
+
+    this.userBalanceService.updateSnapshotsWithRetry(updated.userId, updated.date);
     return TransactionMapper.toResponseDto(updated);
   }
 
@@ -119,8 +131,9 @@ export class TransactionService {
     transactionId: number,
     userId: number,
   ): Promise<void> {
-    await this.findTransactionById(transactionId, userId);
+    const transaction = await this.findTransactionById(transactionId, userId);
     await this.repository.deleteTransaction(transactionId, userId);
+    this.userBalanceService.updateSnapshotsWithRetry(userId, transaction.date);
   }
 
   async hasUserTransactions(userId: number): Promise<boolean> {
@@ -136,22 +149,5 @@ export class TransactionService {
         `${this.CATEGORY_VALIDATION_BY_TYPE_MESSAGE}. Type: ${type}, Category: ${category}`,
       );
     }
-  }
-
-  private calculateBalance(transactions: Transaction[]): BalanceResponseDto {
-    const { entradas, saidas } = transactions.reduce(
-      (acc, transaction) => {
-        const value = new Decimal(transaction.price);
-        if (transaction.type === 'ENTRADA') {
-          acc.entradas = acc.entradas.plus(value);
-        } else if (transaction.type === 'SAIDA') {
-          acc.saidas = acc.saidas.plus(value);
-        }
-        return acc;
-      },
-      { entradas: new Decimal(0), saidas: new Decimal(0) },
-    );
-
-    return { saldo: entradas.minus(saidas).toNumber() };
   }
 }

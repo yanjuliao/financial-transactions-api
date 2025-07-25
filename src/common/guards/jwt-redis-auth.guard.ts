@@ -2,12 +2,10 @@ import { Reflector } from '@nestjs/core';
 import {
   ExecutionContext,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { IS_PUBLIC_KEY } from './decorators/public.decorator';
-import { AuthService } from './service/auth.service';
-import { TokenService } from './service/token.service';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { TokenService } from '../../auth/service/token.service';
 
 @Injectable()
 export class JwtRedisAuthGuard extends AuthGuard('jwt') {

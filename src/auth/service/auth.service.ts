@@ -18,7 +18,7 @@ export class AuthService {
 
   async login(loginRequest: LoginRequestDto) {
     this.validateLoginRequest(loginRequest);
-    const storedUser = await this.usersService.findByEmailValidation(loginRequest.email);
+    const storedUser = await this.usersService.findUserByEmailValidation(loginRequest.email);
     await this.validateCredentials(storedUser, loginRequest);
     return this.tokenService.generateToken(storedUser);
   }

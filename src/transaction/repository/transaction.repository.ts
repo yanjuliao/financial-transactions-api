@@ -7,7 +7,7 @@ import { PrismaService } from 'prisma/prisma.service';
 export class TransactionRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAllTransactions(userId: number): Promise<Transaction[]> {
+  async findTransactions(userId: number): Promise<Transaction[]> {
     return this.prisma.transaction.findMany({
       where: { userId },
     });
@@ -41,6 +41,23 @@ export class TransactionRepository {
     });
   }
 
+  async findTransactionsUntilDate(
+    userId: number,
+    untilDate: Date,
+  ): Promise<Transaction[]> {
+    return this.prisma.transaction.findMany({
+      where: {
+        userId,
+        date: {
+          lte: untilDate,
+        },
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+  }
+  
   async createTransaction(data: {
     date: Date;
     price: number;
