@@ -1,4 +1,3 @@
-// src/user-balance/service/user-balance.service.ts
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { UserBalanceRepository } from '../repository/user-balance.repository';
 import { UserBalanceResponseDto } from '../dto/response/user-balance.response.dto';
@@ -7,6 +6,7 @@ import { Transaction } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { BalanceResponseDto } from 'src/user-balance/dto/response/balance.response.dto';
 import { TransactionService } from 'src/transaction/service/transaction.service';
+import { TransactionType } from 'src/transaction/enum';
 
 @Injectable()
 export class UserBalanceService {
@@ -29,47 +29,47 @@ export class UserBalanceService {
     }));
   }
 
-  private calculateBalance(transactions: Transaction[]): BalanceResponseDto {
-    const { entradas, saidas } = transactions.reduce(
-      (acc, transaction) => {
-        const value = new Decimal(transaction.price);
-        if (transaction.type === 'ENTRADA') {
-          acc.entradas = acc.entradas.plus(value);
-        } else if (transaction.type === 'SAIDA') {
-          acc.saidas = acc.saidas.plus(value);
-        }
-        return acc;
-      },
-      { entradas: new Decimal(0), saidas: new Decimal(0) },
-    );
+  private calculateBalanceFromPrevious(
+    previousBalance: number | Decimal | undefined,
+    transaction: Transaction,
+  ): BalanceResponseDto {
+    const prev = new Decimal(previousBalance ?? 0);
+    const value = new Decimal(transaction.price);
 
-    return { balance: entradas.minus(saidas).toNumber() };
+    const currentBalance =
+      transaction.type === TransactionType.ENTRADA
+        ? prev.plus(value)
+        : prev.minus(value);
+
+    return { balance: currentBalance.toNumber() };
   }
 
   private async calculateAndSaveBalance(
-    userId: number,
-    untilDate: Date,
+    transaction: Transaction,
   ): Promise<void> {
-    const transactions =
-      await this.transactionService.findTransactionsUntilDate(
-        userId,
-        untilDate,
+    const previousSnapshot =
+      await this.repository.findPreviousBalanceBeforeDate(
+        transaction.userId,
+        transaction.date,
       );
-    const balance = this.calculateBalance(transactions).balance;
 
-    await this.repository.saveUserBalance(userId, untilDate, balance);
-  }
+    const balance = this.calculateBalanceFromPrevious(
+      previousSnapshot?.balance,
+      transaction,
+    );
 
-  private calculateAndSaveBalanceWithRetry(
-    userId: number,
-    untilDate: Date,
-  ): void {
-    this.retryExecutor.execute(() =>
-      this.calculateAndSaveBalance(userId, untilDate),
+    await this.repository.saveUserBalance(
+      transaction.userId,
+      transaction.date,
+      balance.balance,
     );
   }
 
-  private async recalculateFutureSnapshots(
+  private calculateAndSaveBalanceWithRetry(transaction: Transaction): void {
+    this.retryExecutor.execute(() => this.calculateAndSaveBalance(transaction));
+  }
+
+  private async recalculateFutureBalances(
     userId: number,
     fromDate: Date,
   ): Promise<void> {
@@ -77,34 +77,88 @@ export class UserBalanceService {
       userId,
       fromDate,
     );
+    if (futureSnapshots.length === 0) return;
+    futureSnapshots.sort(
+      (a, b) => a.snapshotDate.getTime() - b.snapshotDate.getTime(),
+    );
+
+    const previousSnapshot =
+      await this.repository.findPreviousBalanceBeforeDate(userId, fromDate);
+    let runningBalance = new Decimal(previousSnapshot?.balance ?? 0);
+    const baseDate = previousSnapshot?.snapshotDate ?? new Date(0);
+
+    const lastSnapshotDate =
+      futureSnapshots[futureSnapshots.length - 1].snapshotDate;
+    const transactions =
+      await this.transactionService.findTransactionsBetweenDates(
+        userId,
+        baseDate,
+        lastSnapshotDate,
+      );
+
+    let txIndex = 0;
 
     for (const snapshot of futureSnapshots) {
-      const transactions =
-        await this.transactionService.findTransactionsUntilDate(
-          userId,
-          snapshot.snapshotDate,
+      while (
+        txIndex < transactions.length &&
+        transactions[txIndex].date.getTime() <= snapshot.snapshotDate.getTime()
+      ) {
+        const tx = transactions[txIndex];
+        const { balance } = this.calculateBalanceFromPrevious(
+          runningBalance,
+          tx,
         );
-      const balance = this.calculateBalance(transactions).balance;
+        runningBalance = new Decimal(balance);
+        txIndex++;
+      }
 
       await this.repository.saveUserBalance(
         userId,
         snapshot.snapshotDate,
-        balance,
+        runningBalance.toNumber(),
       );
     }
   }
 
-  private recalculateFutureSnapshotsWithRetry(
+  private recalculateFutureBalancesWithRetry(
     userId: number,
     fromDate: Date,
   ): void {
     this.retryExecutor.execute(() =>
-      this.recalculateFutureSnapshots(userId, fromDate),
+      this.recalculateFutureBalances(userId, fromDate),
     );
   }
 
-  updateSnapshotsWithRetry(userId: number, date: Date): void {
-    this.calculateAndSaveBalanceWithRetry(userId, date);
-    this.recalculateFutureSnapshotsWithRetry(userId, date);
+  async updateBalancesWithRetry(transaction: Transaction): Promise<void> {
+    this.calculateAndSaveBalanceWithRetry(transaction);
+    this.recalculateFutureBalancesWithRetry(
+      transaction.userId,
+      transaction.date,
+    );
+  }
+
+  async updateBalancesAfterTransactionRemoval(transaction: Transaction): Promise<void> {
+    await this.retryExecutor.execute(async () => {
+      await this.recalculateFutureBalances(transaction.userId, transaction.date);
+    });
+  }
+
+  async updateBalancesFromListWithRetry(
+    transactions: Transaction[],
+  ): Promise<void> {
+    if (transactions.length === 0) return;
+
+    await this.retryExecutor.execute(async () => {
+      const sorted = transactions.sort(
+        (a, b) => a.date.getTime() - b.date.getTime(),
+      );
+
+      for (const tx of sorted) {
+        await this.calculateAndSaveBalance(tx);
+      }
+
+      const last = sorted[sorted.length - 1];
+      await this.recalculateFutureBalances(last.userId, last.date);
+    });
   }
 }

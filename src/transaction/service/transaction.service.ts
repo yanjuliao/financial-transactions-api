@@ -26,7 +26,6 @@ export class TransactionService {
 
   constructor(
     private readonly repository: TransactionRepository,
-    
     private readonly userBalanceService: UserBalanceService,
   ) {}
 
@@ -68,6 +67,18 @@ export class TransactionService {
     return this.repository.findTransactionsUntilDate(userId, untilDate);
   }
 
+  async findTransactionsBetweenDates(
+    userId: number,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Transaction[]> {
+    return this.repository.findTransactionsBetweenDates(
+      userId,
+      startDate,
+      endDate,
+    );
+  }
+
   async createTransaction(
     dto: CreateTransactionRequestDto,
     userId: number,
@@ -76,7 +87,7 @@ export class TransactionService {
     const entity = TransactionMapper.toEntity(userId, dto);
     const saved = await this.repository.createTransaction(entity);
 
-    this.userBalanceService.updateSnapshotsWithRetry(saved.userId, saved.date);
+    this.userBalanceService.updateBalancesWithRetry(saved);
     return TransactionMapper.toResponseDto(saved);
   }
 
@@ -89,17 +100,18 @@ export class TransactionService {
     }
 
     const entities = dtos.map((dto) => TransactionMapper.toEntity(userId, dto));
-    await this.repository.createTransactionsMany(entities);
 
-    const uniqueDates = Array.from(
-      new Set(dtos.map((dto) => new Date(dto.date).toISOString())),
-    )
-      .map((date) => new Date(date))
-      .sort((a, b) => a.getTime() - b.getTime());
-
-    for (const date of uniqueDates) {
-      this.userBalanceService.updateSnapshotsWithRetry(userId, date);
+    const savedTransactions: Transaction[] = [];
+    for (const entity of entities) {
+      const saved = await this.repository.createTransaction(entity);
+      savedTransactions.push(saved);
     }
+
+    savedTransactions.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+
+    this.userBalanceService.updateBalancesFromListWithRetry(savedTransactions);
 
     return { message: this.TRANSACTION_CREATED_MESSAGE };
   }
@@ -123,7 +135,7 @@ export class TransactionService {
       dto,
     );
 
-    this.userBalanceService.updateSnapshotsWithRetry(updated.userId, updated.date);
+    this.userBalanceService.updateBalancesWithRetry(updated);
     return TransactionMapper.toResponseDto(updated);
   }
 
@@ -131,9 +143,17 @@ export class TransactionService {
     transactionId: number,
     userId: number,
   ): Promise<void> {
-    const transaction = await this.findTransactionById(transactionId, userId);
+    const transaction = await this.repository.findTransactionById(
+      transactionId,
+      userId,
+    );
+
+    if (!transaction) {
+      throw new NotFoundException(this.TRANSACTION_NOT_FOUND_MESSAGE);
+    }
+
     await this.repository.deleteTransaction(transactionId, userId);
-    this.userBalanceService.updateSnapshotsWithRetry(userId, transaction.date);
+    this.userBalanceService.updateBalancesAfterTransactionRemoval(transaction);
   }
 
   async hasUserTransactions(userId: number): Promise<boolean> {

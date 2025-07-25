@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Transaction, Category } from '@prisma/client';
 import { UpdateTransactionRequestDto } from '../dto/requests/update-transaction.request.dto';
 import { PrismaService } from 'prisma/prisma.service';
+import { TransactionType } from '../enum';
 
 @Injectable()
 export class TransactionRepository {
@@ -57,11 +58,30 @@ export class TransactionRepository {
       },
     });
   }
+
+  async findTransactionsBetweenDates(
+    userId: number,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Transaction[]> {
+    return this.prisma.transaction.findMany({
+      where: {
+        userId,
+        date: {
+          gt: startDate,
+          lte: endDate,
+        },
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+  }
   
   async createTransaction(data: {
     date: Date;
     price: number;
-    type: 'ENTRADA' | 'SAIDA';
+    type: TransactionType;
     userId: number;
     category: Category;
   }): Promise<Transaction> {
@@ -72,7 +92,7 @@ export class TransactionRepository {
     data: {
       date: Date;
       price: number;
-      type: 'ENTRADA' | 'SAIDA';
+      type: TransactionType;
       userId: number;
       category: Category;
     }[],

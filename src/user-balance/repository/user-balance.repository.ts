@@ -30,6 +30,23 @@ export class UserBalanceRepository {
     });
   }
 
+  async findPreviousBalanceBeforeDate(
+    userId: number,
+    date: Date,
+  ): Promise<UserBalanceSnapshot | null> {
+    return this.prisma.userBalanceSnapshot.findFirst({
+      where: {
+        userId,
+        snapshotDate: {
+          lt: date,
+        },
+      },
+      orderBy: {
+        snapshotDate: 'desc',
+      },
+    });
+  }
+
   async findUserBalanceFromDate(
     userId: number,
     fromDate: Date,
